@@ -20,6 +20,7 @@ function App() {
             user: {
               email: data.email,
               name: data.name,
+              role: data.role,
             },
           });
         }

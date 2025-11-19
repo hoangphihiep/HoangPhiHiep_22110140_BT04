@@ -1,13 +1,21 @@
 import React, { useContext, useState } from 'react';
-import { UsergroupAddOutlined, HomeOutlined, SettingOutlined } from '@ant-design/icons';
-import { Menu } from 'antd';
+import { UsergroupAddOutlined, HomeOutlined, SettingOutlined, UserOutlined, ShoppingOutlined } from '@ant-design/icons';
+import { Menu, Avatar } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/auth.context';
 
 const Header = () => {
   const navigate = useNavigate();
   const { auth, setAuth } = useContext(AuthContext);
-  console.log('>>> check auth: ', auth);
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    setAuth({
+      isAuthenticated: false,
+      user: { email: '', name: '', role: '' },
+    });
+    navigate('/');
+  };
 
   const items = [
     {
@@ -15,7 +23,12 @@ const Header = () => {
       key: 'home',
       icon: <HomeOutlined />,
     },
-    ...(auth?.isAuthenticated
+    {
+      label: <Link to={'/products'}>Products</Link>,
+      key: 'products',
+      icon: <ShoppingOutlined />,
+    },
+    ...(auth?.isAuthenticated && auth?.user?.role === 'Admin'
       ? [
           {
             label: <Link to={'/user'}>Users</Link>,
@@ -25,27 +38,24 @@ const Header = () => {
         ]
       : []),
     {
-      label: `Welcome ${auth?.user?.email ?? ''}`,
-      key: 'SubMenu',
-      icon: <SettingOutlined />,
+      label: auth?.isAuthenticated 
+        ? `${auth.user.name} (${auth.user.role})` 
+        : 'Tài khoản',
+      key: 'account',
+      icon: auth?.isAuthenticated ? <Avatar size="small">{auth.user.name?.charAt(0)}</Avatar> : <UserOutlined />,
       children: [
         ...(auth?.isAuthenticated
           ? [
               {
-                label: (
-                  <span
-                    onClick={() => {
-                      localStorage.clear();
-                      setAuth({
-                        isAuthenticated: false,
-                        user: { email: '', name: '' },
-                      });
-                      navigate('/');
-                    }}
-                  >
-                    Đăng xuất
-                  </span>
-                ),
+                label: <span>Email: {auth.user.email}</span>,
+                key: 'email',
+                disabled: true,
+              },
+              {
+                type: 'divider',
+              },
+              {
+                label: <span onClick={handleLogout}>Đăng xuất</span>,
                 key: 'logout',
               },
             ]
@@ -54,14 +64,17 @@ const Header = () => {
                 label: <Link to={'/login'}>Đăng nhập</Link>,
                 key: 'login',
               },
+              {
+                label: <Link to={'/register'}>Đăng ký</Link>,
+                key: 'register',
+              },
             ]),
       ],
     },
   ];
 
-  const [current, setCurrent] = useState('mail');
+  const [current, setCurrent] = useState('home');
   const onClick = (e) => {
-    console.log('click ', e);
     setCurrent(e.key);
   };
 

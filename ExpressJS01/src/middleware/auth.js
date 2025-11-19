@@ -1,14 +1,13 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 
-// Use same development fallback secret as signing logic to avoid verify failures
 const jwtSecret = process.env.JWT_SECRET || 'dev_jwt_secret_key_change_this';
 if (!process.env.JWT_SECRET) {
-    console.warn('Warning: JWT_SECRET not set in .env — using development default for verification');
+    console.warn('⚠️  Warning: JWT_SECRET not set in .env — using development default');
 }
 
 const auth = (req, res, next) => {
-    // allow public routes for this router: both with and without trailing slash
+    // Danh sách public routes (không cần authentication)
     const publicPaths = [
         '/v1/api',
         '/v1/api/',
@@ -19,28 +18,70 @@ const auth = (req, res, next) => {
         '/v1/api/reset-password',
     ];
 
+    // Cho phép public routes
     if (publicPaths.includes(req.originalUrl)) {
         return next();
     }
 
-    const token = req?.headers?.authorization?.split(" ")?.[1];
-    if (token) {
-        try {
-            const decoded = jwt.verify(token, jwtSecret);
-            req.user = {
-                email: decoded.email,
-                name: decoded.name,
-                createdBy: "hoidanit"
-            };
-            console.log('>>> check token (decoded):', decoded);
-            return next();
-        } catch (error) {
-            console.warn('Token verify failed:', error && error.message);
-            return res.status(401).json({ message: "Token bị hết hạn/hoặc không hợp lệ" });
-        }
-    } else {
-        return res.status(401).json({ message: "Bạn chưa truyền Access Token ở header/Hoặc token bị hết hạn" });
+    // Lấy token từ header
+    const authHeader = req?.headers?.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ 
+            EC: 1,
+            EM: "Không tìm thấy Access Token. Vui lòng đăng nhập" 
+        });
     }
-}
+
+    const token = authHeader.split(" ")[1];
+
+    if (!token) {
+        return res.status(401).json({ 
+            EC: 1,
+            EM: "Token không hợp lệ" 
+        });
+    }
+
+    try {
+        // Verify token
+        const decoded = jwt.verify(token, jwtSecret);
+        
+        // Gắn thông tin user vào request
+        req.user = {
+            email: decoded.email,
+            name: decoded.name,
+            role: decoded.role || 'User', // Thêm role
+            userId: decoded.userId || decoded.id
+        };
+        
+        console.log('✅ Token verified:', {
+            email: decoded.email,
+            role: decoded.role
+        });
+        
+        return next();
+    } catch (error) {
+        console.error('❌ Token verification failed:', error.message);
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ 
+                EC: 1,
+                EM: "Token đã hết hạn. Vui lòng đăng nhập lại" 
+            });
+        }
+        
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ 
+                EC: 1,
+                EM: "Token không hợp lệ" 
+            });
+        }
+        
+        return res.status(401).json({ 
+            EC: 1,
+            EM: "Xác thực thất bại" 
+        });
+    }
+};
 
 module.exports = auth;

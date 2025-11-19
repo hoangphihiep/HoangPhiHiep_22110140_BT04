@@ -13,89 +13,123 @@ if (!process.env.JWT_SECRET || !process.env.JWT_EXPIRE) {
 
 const createUserService = async (name, email, password) => {
     try {
-        //check user exist
-        const user = await User.findOne({ email });
-        if (user) {
-            console.log(`>>> user exist, chọn 1 email khác: ${email}`);
-            return null;
+        // Kiểm tra user đã tồn tại
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            console.log(`❌ Email đã tồn tại: ${email}`);
+            return {
+                EC: 1,
+                EM: "Email đã tồn tại trong hệ thống"
+            };
         }
 
-        //hash user password
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         
-        //save user to database
-        let result = await User.create({
+        // Tạo user mới
+        const newUser = await User.create({
             name: name,
             email: email,
             password: hashedPassword,
             role: "User",
         });
-        return result;
+        
+        console.log(`✅ Tạo user thành công: ${email}`);
+        
+        return {
+            EC: 0,
+            EM: "Tạo tài khoản thành công",
+            data: {
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                role: newUser.role
+            }
+        };
     } catch (error) {
-           console.error(error);
-           return {
-              EC: -1,
-              EM: "Internal server error"
-           };
+        console.error('❌ Error in createUserService:', error);
+        return {
+            EC: -1,
+            EM: "Lỗi hệ thống. Vui lòng thử lại sau"
+        };
     }
 };
 
 const loginService = async (email, password) => {
     try {
-        //fetch user by email
+        // Tìm user theo email
         const user = await User.findOne({ email: email });
-        if (user) {
-            //compare password
-            const isMatchPassword = await bcrypt.compare(password, user.password);
-            if (!isMatchPassword) {
-                return {
-                    EC: 2,
-                    EM: "Email/Password không hợp lệ"
-                };
-            } else { //create an access token
-                const payload = {
-                    email: user.email,
-                    name: user.name,
-                }
-
-                const access_token = jwt.sign(payload, jwtSecret, { expiresIn: jwtExpire });
-
-                return {
-                    EC: 0,
-                    access_token,
-                    user: {
-                        email: user.email,
-                        name: user.name
-                    }
-                };
-            }
-        }else{
-            return{
+        
+        if (!user) {
+            return {
                 EC: 1,
-                EM: "Email/Password không hợp lệ"
-            }
+                EM: "Email hoặc mật khẩu không đúng"
+            };
         }
+
+        // So sánh password
+        const isMatchPassword = await bcrypt.compare(password, user.password);
+        
+        if (!isMatchPassword) {
+            return {
+                EC: 2,
+                EM: "Email hoặc mật khẩu không đúng"
+            };
+        }
+
+        // ✅ Tạo JWT với đầy đủ thông tin bao gồm ROLE
+        const payload = {
+            userId: user._id,
+            email: user.email,
+            name: user.name,
+            role: user.role // ⚠️ QUAN TRỌNG: Thêm role vào token
+        };
+
+        const access_token = jwt.sign(payload, jwtSecret, { 
+            expiresIn: jwtExpire 
+        });
+
+        console.log(`✅ User ${email} đăng nhập thành công - Role: ${user.role}`);
+
+        return {
+            EC: 0,
+            EM: "Đăng nhập thành công",
+            access_token,
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.name,
+                role: user.role
+            }
+        };
     } catch (error) {
-           console.error(error);
-           return {
-              EC: -1,
-              EM: "Internal server error"
-           };
+        console.error('❌ Error in loginService:', error);
+        return {
+            EC: -1,
+            EM: "Lỗi hệ thống. Vui lòng thử lại sau"
+        };
     }
 };
 
 const getUserService = async () => {
     try {
-        let result = await User.find({}).select("-password");
-        return result;
+        // Lấy tất cả user, loại bỏ password
+        const users = await User.find({}).select("-password");
+        
+        return {
+            EC: 0,
+            EM: "Lấy danh sách user thành công",
+            data: users
+        };
     } catch (error) {
-           console.error(error);
-           return {
-              EC: -1,
-              EM: "Internal server error"
-           };
+        console.error('❌ Error in getUserService:', error);
+        return {
+            EC: -1,
+            EM: "Lỗi hệ thống. Vui lòng thử lại sau"
+        };
     }
 };
+
 
 module.exports = {
     createUserService, 

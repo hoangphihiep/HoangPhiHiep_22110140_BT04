@@ -1,27 +1,100 @@
 const express = require('express');
 const { createUser, handleLogin, getUser, getAccount } = require('../controllers/userController');
 const { requestPasswordReset, verifyOTP, resetPassword } = require('../controllers/passwordResetController');
+const { getCategories, getProducts, getProductById } = require('../controllers/productController');
+
+const { 
+    validateRegister, 
+    validateLogin, 
+    validateForgotPassword,
+    validateVerifyOTP,
+    validateResetPassword 
+} = require('../middleware/validator');
+
+const { 
+    loginLimiter, 
+    registerLimiter, 
+    forgotPasswordLimiter,
+    verifyOTPLimiter,
+    apiLimiter,
+    strictLimiter
+} = require('../middleware/rateLimiter');
+
 const auth = require('../middleware/auth');
-const delay = require('../middleware/delay');
+
+const { isAdmin, isUser } = require('../middleware/authorize');
 
 const routerAPI = express.Router();
 
-// apply auth middleware to all routes on this router
-routerAPI.use(auth);
-
 routerAPI.get("/", (req, res) => {
-    return res.status(200).json("Hello world api")
+    return res.status(200).json({
+        EC: 0,
+        EM: "API is running",
+        version: "1.0.0"
+    });
 });
 
-routerAPI.post("/register", createUser);
-routerAPI.post("/login", handleLogin);
+routerAPI.post(
+    "/register", 
+    registerLimiter,
+    validateRegister,
+    createUser
+);
 
-routerAPI.get("/user", getUser);
-routerAPI.get("/account", delay, getAccount);
+routerAPI.post(
+    "/login", 
+    loginLimiter,
+    validateLogin,
+    handleLogin
+);
 
-// Password Reset Routes
-routerAPI.post("/forgot-password", requestPasswordReset);
-routerAPI.post("/verify-otp", verifyOTP);
-routerAPI.post("/reset-password", resetPassword);
+routerAPI.post(
+    "/forgot-password", 
+    forgotPasswordLimiter,
+    validateForgotPassword,
+    requestPasswordReset
+);
 
-module.exports = routerAPI; //export default
+routerAPI.post(
+    "/verify-otp", 
+    verifyOTPLimiter,
+    validateVerifyOTP,
+    verifyOTP
+);
+
+routerAPI.post(
+    "/reset-password", 
+    strictLimiter,
+    validateResetPassword,
+    resetPassword
+);
+
+routerAPI.get("/categories", getCategories);
+routerAPI.get("/products", getProducts);
+routerAPI.get("/products/:id", getProductById);
+
+routerAPI.use(auth);
+
+routerAPI.use(apiLimiter);
+
+routerAPI.get(
+    "/user", 
+    isAdmin,
+    getUser
+);
+
+routerAPI.get(
+    "/account", 
+    isUser,
+    getAccount
+);
+
+// 404 handler
+routerAPI.use((req, res) => {
+    return res.status(404).json({
+        EC: 1,
+        EM: "API endpoint không tồn tại"
+    });
+});
+
+module.exports = routerAPI;

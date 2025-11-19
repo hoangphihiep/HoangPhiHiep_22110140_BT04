@@ -1,14 +1,20 @@
 import axios from 'axios';
 
-// Set config defaults when creating the instance
+// Tạo instance axios
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL,
+  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:8888',
+  timeout: 30000,
 });
 
-// Add a request interceptor
+// Interceptor: Tự động thêm token vào header
 instance.interceptors.request.use(
   function (config) {
-    config.headers.Authorization = `Bearer ${localStorage.getItem('access_token')}`;
+    const token = localStorage.getItem('access_token');
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
     return config;
   },
   function (error) {
@@ -16,15 +22,30 @@ instance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
+// Interceptor: Xử lý response và lỗi
 instance.interceptors.response.use(
   function (response) {
-    if (response && response.data) return response;
-    return response;
+    // Trả về data thay vì response
+    return response.data ? response : response;
   },
   function (error) {
-    if (error?.response?.data) return Promise.reject(error.response.data);
-    return Promise.reject(error);
+    // Xử lý lỗi 401 (Unauthorized)
+    if (error?.response?.status === 401) {
+      // Token hết hạn hoặc không hợp lệ
+      localStorage.removeItem('access_token');
+      
+      // Chuyển về trang login nếu không phải trang login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+
+    // Trả về error với cấu trúc chuẩn
+    return Promise.reject({
+      message: error?.response?.data?.EM || error?.message || 'Có lỗi xảy ra',
+      status: error?.response?.status,
+      data: error?.response?.data,
+    });
   }
 );
 

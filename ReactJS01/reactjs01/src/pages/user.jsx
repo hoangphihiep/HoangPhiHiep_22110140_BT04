@@ -9,14 +9,14 @@ const UserPage = () => {
     const fetchUser = async () => {
       try {
         const res = await getUserApi();
-        const data = res?.data ?? res;
-        if (!data?.message) {
-          setDataSource(data);
+
+        // Lấy danh sách user từ API
+        const userList = res?.data?.data || res?.data || [];
+
+        if (Array.isArray(userList)) {
+          setDataSource(userList);
         } else {
-          notification.error({
-            message: 'Unauthorized',
-            description: data.message,
-          });
+          setDataSource([]);
         }
       } catch (err) {
         notification.error({
