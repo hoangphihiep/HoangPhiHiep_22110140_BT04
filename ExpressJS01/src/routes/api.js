@@ -1,7 +1,15 @@
 const express = require('express');
 const { createUser, handleLogin, getUser, getAccount } = require('../controllers/userController');
 const { requestPasswordReset, verifyOTP, resetPassword } = require('../controllers/passwordResetController');
-const { getCategories, getProducts, getProductById } = require('../controllers/productController');
+const { 
+    getCategories, 
+    getProducts, 
+    getProductById,
+    searchProducts,
+    addProduct,
+    editProduct,
+    removeProduct 
+} = require('../controllers/productController');
 
 const { 
     validateRegister, 
@@ -70,8 +78,9 @@ routerAPI.post(
 );
 
 routerAPI.get("/categories", getCategories);
-routerAPI.get("/products", getProducts);
+routerAPI.get("/products/search", searchProducts); // Tìm kiếm & lọc với query params
 routerAPI.get("/products/:id", getProductById);
+routerAPI.get("/products", getProducts);
 
 routerAPI.use(auth);
 
@@ -87,6 +96,25 @@ routerAPI.get(
     "/account", 
     isUser,
     getAccount
+);
+
+// Admin Product Management Routes
+routerAPI.post(
+    "/products",
+    isAdmin,
+    addProduct
+);
+
+routerAPI.put(
+    "/products/:id",
+    isAdmin,
+    editProduct
+);
+
+routerAPI.delete(
+    "/products/:id",
+    isAdmin,
+    removeProduct
 );
 
 // 404 handler

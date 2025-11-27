@@ -14,11 +14,11 @@ const CategoryFilter = ({ categories, selectedCategory, onSelectCategory, loadin
           </Button>
           {categories.map(category => (
             <Button
-              key={category._id}
-              type={selectedCategory === category._id ? 'primary' : 'default'}
-              onClick={() => onSelectCategory(category._id)}
+              key={category}
+              type={selectedCategory === category ? 'primary' : 'default'}
+              onClick={() => onSelectCategory(category)}
             >
-              {category.name}
+              {category}
             </Button>
           ))}
         </Space>

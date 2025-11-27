@@ -57,6 +57,12 @@ const getProductByIdApi = (id) => {
   return axios.get(URL_API);
 };
 
+// Search Products API with filters
+const searchProductsApi = (params) => {
+  const URL_API = '/v1/api/products/search';
+  return axios.get(URL_API, { params });
+};
+
 export { 
   createUserApi, 
   loginApi, 
@@ -67,5 +73,6 @@ export {
   resetPasswordApi,
   getCategoriesApi,
   getProductsApi,
-  getProductByIdApi
+  getProductByIdApi,
+  searchProductsApi,
 };

@@ -13,6 +13,7 @@ const ProductsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef(null);
+  const loadingRef = useRef(false);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -20,8 +21,9 @@ const ProductsPage = () => {
       try {
         setCategoriesLoading(true);
         const res = await getCategoriesApi();
-        if (res.data?.EC === 0) {
-          setCategories(res.data?.DT ?? []);
+        const data = res?.data ?? res;
+        if (data?.EC === 0) {
+          setCategories(data?.DT ?? []);
         }
       } catch (error) {
         message.error('Failed to load categories');
@@ -36,12 +38,16 @@ const ProductsPage = () => {
 
   // Fetch products
   const fetchProducts = useCallback(async (page = 1, category = 'all', replace = false) => {
+    if (loadingRef.current) return;
+    
     try {
+      loadingRef.current = true;
       setLoading(true);
       const res = await getProductsApi(page, 10, category);
-      if (res.data?.EC === 0) {
-        const newProducts = res.data?.DT?.products ?? [];
-        const pagination = res.data?.DT?.pagination ?? {};
+      const data = res?.data ?? res;
+      if (data?.EC === 0) {
+        const newProducts = data?.DT?.products ?? [];
+        const pagination = data?.DT?.pagination ?? {};
 
         if (replace) {
           setProducts(newProducts);
@@ -50,7 +56,7 @@ const ProductsPage = () => {
         }
 
         // Check if there are more products
-        setHasMore(page < pagination.pages);
+        setHasMore(page < pagination.totalPages);
         setCurrentPage(page);
       }
     } catch (error) {
@@ -58,6 +64,7 @@ const ProductsPage = () => {
       console.log('Error fetching products:', error);
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   }, []);
 
@@ -65,6 +72,7 @@ const ProductsPage = () => {
   useEffect(() => {
     setCurrentPage(1);
     setProducts([]);
+    setHasMore(true);
     fetchProducts(1, selectedCategory, true);
   }, [selectedCategory, fetchProducts]);
 
@@ -73,32 +81,36 @@ const ProductsPage = () => {
     setSelectedCategory(categoryId);
   };
 
-  // Handle load more
-  const handleLoadMore = () => {
-    fetchProducts(currentPage + 1, selectedCategory, false);
-  };
-
   // Infinite scroll observer
   useEffect(() => {
+    const currentTarget = observerTarget.current;
+    
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          handleLoadMore();
+        if (entries[0].isIntersecting && hasMore && !loadingRef.current) {
+          fetchProducts(currentPage + 1, selectedCategory, false);
         }
       },
       { threshold: 0.1 }
     );
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
+    if (currentTarget) {
+      observer.observe(currentTarget);
     }
 
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, loading, handleLoadMore]);
+  }, [hasMore, currentPage, selectedCategory, fetchProducts]);
+
+  // Handle load more (for manual button)
+  const handleLoadMore = () => {
+    if (hasMore && !loadingRef.current) {
+      fetchProducts(currentPage + 1, selectedCategory, false);
+    }
+  };
 
   return (
     <Layout style={{ minHeight: '100vh', padding: '24px' }}>

@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { UsergroupAddOutlined, HomeOutlined, SettingOutlined, UserOutlined, ShoppingOutlined } from '@ant-design/icons';
+import { UsergroupAddOutlined, HomeOutlined, SettingOutlined, UserOutlined, ShoppingOutlined, SearchOutlined } from '@ant-design/icons';
 import { Menu, Avatar } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/auth.context';
@@ -27,6 +27,11 @@ const Header = () => {
       label: <Link to={'/products'}>Products</Link>,
       key: 'products',
       icon: <ShoppingOutlined />,
+    },
+    {
+      label: <Link to={'/search'}>Tìm kiếm</Link>,
+      key: 'search',
+      icon: <SearchOutlined />,
     },
     ...(auth?.isAuthenticated && auth?.user?.role === 'Admin'
       ? [
