@@ -63,6 +63,89 @@ const searchProductsApi = (params) => {
   return axios.get(URL_API, { params });
 };
 
+// Similar Products API
+const getSimilarProductsApi = (productId, limit = 6) => {
+  const URL_API = `/v1/api/products/${productId}/similar?limit=${limit}`;
+  return axios.get(URL_API);
+};
+
+// Favorites APIs
+const addToFavoritesApi = (productId) => {
+  const URL_API = '/v1/api/favorites';
+  const data = { productId };
+  return axios.post(URL_API, data);
+};
+
+const removeFromFavoritesApi = (productId) => {
+  const URL_API = `/v1/api/favorites/${productId}`;
+  return axios.delete(URL_API);
+};
+
+const getFavoritesApi = (page = 1, limit = 12) => {
+  const URL_API = `/v1/api/favorites?page=${page}&limit=${limit}`;
+  return axios.get(URL_API);
+};
+
+const checkIsFavoriteApi = (productId) => {
+  const URL_API = `/v1/api/favorites/check/${productId}`;
+  return axios.get(URL_API);
+};
+
+// Reviews APIs
+const addReviewApi = (productId, rating, comment) => {
+  const URL_API = '/v1/api/reviews';
+  const data = { productId, rating, comment };
+  return axios.post(URL_API, data);
+};
+
+const updateReviewApi = (reviewId, rating, comment) => {
+  const URL_API = `/v1/api/reviews/${reviewId}`;
+  const data = { rating, comment };
+  return axios.put(URL_API, data);
+};
+
+const deleteReviewApi = (reviewId) => {
+  const URL_API = `/v1/api/reviews/${reviewId}`;
+  return axios.delete(URL_API);
+};
+
+const getProductReviewsApi = (productId, page = 1, limit = 10) => {
+  const URL_API = `/v1/api/products/${productId}/reviews?page=${page}&limit=${limit}`;
+  return axios.get(URL_API);
+};
+
+const getProductReviewStatsApi = (productId) => {
+  const URL_API = `/v1/api/products/${productId}/reviews/stats`;
+  return axios.get(URL_API);
+};
+
+// View History APIs
+const addToViewHistoryApi = (productId) => {
+  const URL_API = '/v1/api/view-history';
+  const data = { productId };
+  return axios.post(URL_API, data);
+};
+
+const getViewHistoryApi = (page = 1, limit = 12) => {
+  const URL_API = `/v1/api/view-history?page=${page}&limit=${limit}`;
+  return axios.get(URL_API);
+};
+
+const clearViewHistoryApi = () => {
+  const URL_API = '/v1/api/view-history';
+  return axios.delete(URL_API);
+};
+
+const removeFromViewHistoryApi = (productId) => {
+  const URL_API = `/v1/api/view-history/${productId}`;
+  return axios.delete(URL_API);
+};
+
+const getProductViewCountApi = (productId) => {
+  const URL_API = `/v1/api/products/${productId}/view-count`;
+  return axios.get(URL_API);
+};
+
 export { 
   createUserApi, 
   loginApi, 
@@ -75,4 +158,22 @@ export {
   getProductsApi,
   getProductByIdApi,
   searchProductsApi,
+  getSimilarProductsApi,
+  // Favorites
+  addToFavoritesApi,
+  removeFromFavoritesApi,
+  getFavoritesApi,
+  checkIsFavoriteApi,
+  // Reviews
+  addReviewApi,
+  updateReviewApi,
+  deleteReviewApi,
+  getProductReviewsApi,
+  getProductReviewStatsApi,
+  // View History
+  addToViewHistoryApi,
+  getViewHistoryApi,
+  clearViewHistoryApi,
+  removeFromViewHistoryApi,
+  getProductViewCountApi,
 };

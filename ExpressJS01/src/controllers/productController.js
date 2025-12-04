@@ -5,6 +5,7 @@ const {
     createProduct,
     updateProduct,
     deleteProduct,
+    getSimilarProducts: getSimilarProductsService,
 } = require('../services/productService');
 
 // GET: Tìm kiếm và lọc sản phẩm với nhiều điều kiện
@@ -102,6 +103,22 @@ const removeProduct = async (req, res) => {
     }
 };
 
+// GET: Lấy sản phẩm tương tự
+const getSimilarProducts = async (req, res) => {
+    const { id } = req.params;
+    const { limit } = req.query;
+    
+    const result = await getSimilarProductsService(id, limit);
+    
+    if (result.EC === 0) {
+        return res.status(200).json(result);
+    } else if (result.EC === 1) {
+        return res.status(404).json(result);
+    } else {
+        return res.status(500).json(result);
+    }
+};
+
 // Backward compatibility: alias cho searchProducts
 const getProducts = searchProducts;
 
@@ -113,4 +130,5 @@ module.exports = {
     addProduct,
     editProduct,
     removeProduct,
+    getSimilarProducts,
 };

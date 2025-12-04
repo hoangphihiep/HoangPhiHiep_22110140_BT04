@@ -1,4 +1,51 @@
 const Product = require('../models/product');
+const ViewHistory = require('../models/viewHistory');
+const Review = require('../models/review');
+
+// Helper: Thêm viewCount và avgRating từ ViewHistory và Review vào products
+const addViewCountToProducts = async (products) => {
+    const productIds = products.map(p => p._id);
+    
+    // Aggregate viewCount
+    const viewCounts = await ViewHistory.aggregate([
+        { $match: { productId: { $in: productIds } } },
+        { $group: { _id: '$productId', count: { $sum: 1 } } }
+    ]);
+    
+    // Aggregate avgRating và totalReviews
+    const ratings = await Review.aggregate([
+        { $match: { productId: { $in: productIds } } },
+        { 
+            $group: { 
+                _id: '$productId', 
+                avgRating: { $avg: '$rating' },
+                totalReviews: { $sum: 1 }
+            } 
+        }
+    ]);
+    
+    const viewCountMap = {};
+    viewCounts.forEach(vc => {
+        viewCountMap[vc._id.toString()] = vc.count;
+    });
+    
+    const ratingMap = {};
+    ratings.forEach(r => {
+        ratingMap[r._id.toString()] = {
+            avgRating: Math.round(r.avgRating * 10) / 10,
+            totalReviews: r.totalReviews
+        };
+    });
+    
+    return products.map(product => {
+        const productObj = product.toObject ? product.toObject() : product;
+        productObj.viewCount = viewCountMap[productObj._id.toString()] || 0;
+        const ratingData = ratingMap[productObj._id.toString()];
+        productObj.avgRating = ratingData?.avgRating || 0;
+        productObj.totalReviews = ratingData?.totalReviews || 0;
+        return productObj;
+    });
+};
 
 // Tìm kiếm và lọc sản phẩm với nhiều điều kiện
 const searchAndFilterProducts = async (filters = {}) => {
@@ -82,13 +129,16 @@ const searchAndFilterProducts = async (filters = {}) => {
             .skip(skip)
             .limit(limitNum);
 
+        // Thêm viewCount từ ViewHistory
+        const productsWithViewCount = await addViewCountToProducts(products);
+
         // Đếm tổng số sản phẩm match
         const total = await Product.countDocuments(queryConditions);
 
         return {
             EC: 0,
             DT: {
-                products,
+                products: productsWithViewCount,
                 pagination: {
                     page: pageNum,
                     limit: limitNum,
@@ -240,6 +290,46 @@ const deleteProduct = async (id) => {
     }
 };
 
+// Lấy sản phẩm tương tự (cùng category, sắp xếp theo rating)
+const getSimilarProducts = async (productId, limit = 6) => {
+    try {
+        const product = await Product.findById(productId);
+        
+        if (!product) {
+            return {
+                EC: 1,
+                EM: 'Sản phẩm không tồn tại',
+            };
+        }
+
+        const limitNum = parseInt(limit) || 6;
+
+        // Tìm sản phẩm cùng category, loại trừ product hiện tại
+        const similarProducts = await Product
+            .find({
+                _id: { $ne: productId },
+                category: product.category,
+                isActive: true,
+            })
+            .sort({ rating: -1, views: -1 })
+            .limit(limitNum);
+
+        // Thêm viewCount từ ViewHistory
+        const productsWithViewCount = await addViewCountToProducts(similarProducts);
+
+        return {
+            EC: 0,
+            DT: productsWithViewCount,
+        };
+    } catch (error) {
+        console.error('Error in getSimilarProducts:', error);
+        return {
+            EC: -1,
+            EM: 'Lỗi khi lấy sản phẩm tương tự',
+        };
+    }
+};
+
 module.exports = {
     searchAndFilterProducts,
     getCategories,
@@ -247,4 +337,5 @@ module.exports = {
     createProduct,
     updateProduct,
     deleteProduct,
+    getSimilarProducts,
 };

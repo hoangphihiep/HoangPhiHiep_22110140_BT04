@@ -14,6 +14,9 @@ import LoginPage from './pages/login.jsx';
 import ForgotPasswordPage from './pages/forgotPassword.jsx';
 import ProductsPage from './pages/products.jsx';
 import ProductSearchPage from './pages/productSearch.jsx';
+import ProductDetailPage from './pages/productDetail.jsx';
+import FavoritesPage from './pages/favorites.jsx';
+import ViewHistoryPage from './pages/viewHistory.jsx';
 import { AuthWrapper } from './components/context/auth.context.jsx';
 
 const router = createBrowserRouter([
@@ -34,8 +37,20 @@ const router = createBrowserRouter([
         element: <ProductsPage />
       },
       {
+        path: "product/:id",
+        element: <ProductDetailPage />
+      },
+      {
         path: "search",
         element: <ProductSearchPage />
+      },
+      {
+        path: "favorites",
+        element: <FavoritesPage />
+      },
+      {
+        path: "view-history",
+        element: <ViewHistoryPage />
       },
     ],
   },

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   Row,
@@ -22,11 +23,13 @@ import {
   StarOutlined,
 } from '@ant-design/icons';
 import { searchProductsApi, getCategoriesApi } from '../util/api';
+import ProductCard from '../components/product/ProductCard';
 
 const { Search } = Input;
 const { Option } = Select;
 
 const ProductSearchPage = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -151,13 +154,6 @@ const ProductSearchPage = () => {
       style: 'currency',
       currency: 'VND',
     }).format(price);
-  };
-
-  const calculateFinalPrice = (product) => {
-    if (product.discount > 0) {
-      return Math.round(product.price - (product.price * product.discount / 100));
-    }
-    return product.price;
   };
 
   return (
@@ -315,73 +311,9 @@ const ProductSearchPage = () => {
             <Row gutter={[16, 16]}>
               {products.map((product) => (
                 <Col key={product._id} xs={24} sm={12} md={8} lg={6}>
-                  <Card
-                    hoverable
-                    cover={
-                      <img
-                        alt={product.name}
-                        src={product.image}
-                        style={{ height: 200, objectFit: 'cover' }}
-                      />
-                    }
-                    actions={[
-                      <Space key="views">
-                        <EyeOutlined />
-                        {product.views}
-                      </Space>,
-                      <Space key="rating">
-                        <StarOutlined />
-                        {product.rating}
-                      </Space>,
-                    ]}
-                  >
-                    <Card.Meta
-                      title={
-                        <div style={{ 
-                          overflow: 'hidden', 
-                          textOverflow: 'ellipsis', 
-                          whiteSpace: 'nowrap' 
-                        }}>
-                          {product.name}
-                        </div>
-                      }
-                      description={
-                        <div>
-                          <Tag color="blue">{product.category}</Tag>
-                          {product.discount > 0 && (
-                            <Tag color="red">-{product.discount}%</Tag>
-                          )}
-                          <Divider style={{ margin: '8px 0' }} />
-                          <div style={{ 
-                            color: '#888', 
-                            fontSize: '12px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {product.description}
-                          </div>
-                          <Divider style={{ margin: '8px 0' }} />
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            {product.discount > 0 ? (
-                              <div>
-                                <div style={{ textDecoration: 'line-through', color: '#999', fontSize: '12px' }}>
-                                  {formatPrice(product.price)}
-                                </div>
-                                <div style={{ color: '#ff4d4f', fontWeight: 'bold', fontSize: '16px' }}>
-                                  {formatPrice(calculateFinalPrice(product))}
-                                </div>
-                              </div>
-                            ) : (
-                              <div style={{ color: '#000', fontWeight: 'bold', fontSize: '16px' }}>
-                                {formatPrice(product.price)}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      }
-                    />
-                  </Card>
+                  <div onClick={() => navigate(`/product/${product._id}`)} style={{ cursor: 'pointer' }}>
+                    <ProductCard product={product} />
+                  </div>
                 </Col>
               ))}
             </Row>

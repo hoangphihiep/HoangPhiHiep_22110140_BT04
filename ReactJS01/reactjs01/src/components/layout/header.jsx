@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { UsergroupAddOutlined, HomeOutlined, SettingOutlined, UserOutlined, ShoppingOutlined, SearchOutlined } from '@ant-design/icons';
+import { UsergroupAddOutlined, HomeOutlined, UserOutlined, ShoppingOutlined, SearchOutlined, HeartOutlined, HistoryOutlined } from '@ant-design/icons';
 import { Menu, Avatar } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/auth.context';
@@ -33,6 +33,20 @@ const Header = () => {
       key: 'search',
       icon: <SearchOutlined />,
     },
+    ...(auth?.isAuthenticated
+      ? [
+          {
+            label: <Link to={'/favorites'}>Yêu thích</Link>,
+            key: 'favorites',
+            icon: <HeartOutlined />,
+          },
+          {
+            label: <Link to={'/view-history'}>Đã xem</Link>,
+            key: 'history',
+            icon: <HistoryOutlined />,
+          },
+        ]
+      : []),
     ...(auth?.isAuthenticated && auth?.user?.role === 'Admin'
       ? [
           {

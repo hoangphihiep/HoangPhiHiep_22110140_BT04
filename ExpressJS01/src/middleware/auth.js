@@ -48,10 +48,10 @@ const auth = (req, res, next) => {
         
         // Gắn thông tin user vào request
         req.user = {
+            id: decoded.userId || decoded.id, // Thống nhất dùng 'id'
             email: decoded.email,
             name: decoded.name,
-            role: decoded.role || 'User', // Thêm role
-            userId: decoded.userId || decoded.id
+            role: decoded.role || 'User'
         };
         
         console.log('✅ Token verified:', {

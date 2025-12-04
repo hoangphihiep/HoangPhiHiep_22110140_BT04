@@ -101,10 +101,10 @@ const ProductCard = ({ product }) => {
           
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#888' }}>
             <span>
-              <EyeOutlined /> {product.views || 0}
+              <EyeOutlined /> {product.viewCount ?? product.views ?? 0}
             </span>
             <span>
-              <StarOutlined style={{ color: '#faad14' }} /> {product.rating || 0}
+              <StarOutlined style={{ color: '#faad14' }} /> {product.avgRating ?? product.rating ?? 0}
             </span>
           </div>
         </div>
